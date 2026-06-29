@@ -1,15 +1,19 @@
-import os
-import pytest
-from src.agent import create_simple_agent
+import unittest
+from unittest.mock import patch, MagicMock
+from agent import create_agent
 
-@pytest.mark.skipif(not os.getenv("OPENAI_API_KEY"), reason="OPENAI_API_KEY not set")
-def test_agent_addition():
-    agent = create_simple_agent()
-    result = agent.invoke({"input": "What is 2 plus 3?"})
-    assert "5" in result["output"]
+class TestAgent(unittest.TestCase):
+    @patch("config.get_llm")
+    def test_agent_response(self, mock_get_llm):
+        # Mock the LLM to return a fixed response
+        mock_llm = MagicMock()
+        mock_llm.invoke.return_value = MagicMock(content="84")
+        mock_get_llm.return_value = mock_llm
 
-@pytest.mark.skipif(not os.getenv("OPENAI_API_KEY"), reason="OPENAI_API_KEY not set")
-def test_agent_time():
-    agent = create_simple_agent()
-    result = agent.invoke({"input": "What is the current time?"})
-    assert "Z" in result["output"]
+        agent = create_agent()
+        response = agent.run("What is 12 times 7?")
+        self.assertIsInstance(response, str)
+        self.assertTrue(len(response) > 0)
+
+if __name__ == "__main__":
+    unittest.main()

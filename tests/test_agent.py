@@ -1,19 +1,22 @@
-import unittest
-from unittest.mock import patch, MagicMock
-from agent import create_agent
+import os
+import sys
+import pytest
+from agent import create_agent, get_response
 
-class TestAgent(unittest.TestCase):
-    @patch("config.get_llm")
-    def test_agent_response(self, mock_get_llm):
-        # Mock the LLM to return a fixed response
-        mock_llm = MagicMock()
-        mock_llm.invoke.return_value = MagicMock(content="84")
-        mock_get_llm.return_value = mock_llm
+@pytest.fixture(scope="module")
+def agent_chain():
+    # Ensure the environment variable is set for tests
+    os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY", "test_key")
+    return create_agent()
 
-        agent = create_agent()
-        response = agent.run("What is 12 times 7?")
-        self.assertIsInstance(response, str)
-        self.assertTrue(len(response) > 0)
+def test_agent_returns_non_empty(agent_chain):
+    question = "What is the capital of France?"
+    response = get_response(agent_chain, question)
+    assert isinstance(response, str)
+    assert response.strip() != ""
 
-if __name__ == "__main__":
-    unittest.main()
+def test_agent_handles_empty_question(agent_chain):
+    question = ""
+    response = get_response(agent_chain, question)
+    assert isinstance(response, str)
+    assert response.strip() != ""
